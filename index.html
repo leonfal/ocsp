@@ -442,17 +442,18 @@
                 return 'TACI';
             }
 
-            // PACI: two of A, B or C (not D) OR C alone OR exactly one of items 4, 5, 6, 8
-            const countABC = [A, B, C].filter(Boolean).length;
-            if ((countABC === 2 && !D) || (C && !A && !B) || exactlyOneItem) {
-                return 'PACI';
-            }
-
             // LACI: A (not B, C, D) OR A + item 7 (on same side as A) (not B, C or item 10) OR item 10 + item 5 (exclusively)
+            // Check LACI before PACI because of the special dysarthria + arm case
             if ((A && !B && !C && !D) ||
                 (A && ataxiaSameSideAsA && !B && !C && !dysarthria) ||
                 dysarthriaArmOnly) {
                 return 'LACI';
+            }
+
+            // PACI: two of A, B or C (not D) OR C alone OR exactly one of items 4, 5, 6, 8 and NOT 7
+            const countABC = [A, B, C].filter(Boolean).length;
+            if ((countABC === 2 && !D) || (C && !A && !B) || (exactlyOneItem && !ataxia && !D)) {
+                return 'PACI';
             }
 
             // POCI: D OR B (not A or C)

@@ -22,6 +22,6 @@ The classification is in a two-step process:
 
 2. **Second Step**: Further classifies into the classes:
     - TACI. A + B + C (not D)
-    - PACI. two of A, B or C (not D) OR C alone OR exactly one of items 4, 5, 6, 8 (Item 8 condition: sensory loss restricted to only one of the following areas: face, arm or leg (L / R / Both)
+    - PACI. two of A, B or C (not D) OR C alone OR exactly one of items 4, 5, 6, 8 and NOT 7 (Item 8 condition: sensory loss restricted to only one of the following areas: face, arm or leg (L / R / Both)
     - LACI. A (not B, C, D) OR A + item 7 (on same side as A) (not B, C or item 10) OR item 10 + item 5 (exclusively no other items)
     - POCI. D OR B (not A or C)
