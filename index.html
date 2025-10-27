@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCSP Stroke Classification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .double-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .question-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .question-group {
+            margin-bottom: 5px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .question-group:last-of-type {
+            border-bottom: none;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #444;
+            font-weight: 500;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+
+        .side-buttons {
+            display: none;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .side-buttons.visible {
+            display: flex;
+        }
+
+        .sensory-buttons.visible {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .side-btn {
+            padding: 6px 16px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .side-btn:hover {
+            border-color: #999;
+        }
+
+        .side-btn.active {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: white;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        button[type="submit"], button[type="button"] {
+            background: #2196F3;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background 0.2s;
+        }
+
+        button[type="submit"]:hover {
+            background: #1976D2;
+        }
+
+        button[type="button"] {
+            background: #757575;
+        }
+
+        button[type="button"]:hover {
+            background: #616161;
+        }
+
+        .result {
+            margin-top: 10px;
+            padding: 20px;
+            border-radius: 4px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result.TACI {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .result.LACI {
+            background: #fff3e0;
+            color: #b38c00;
+        }
+
+        .result.POCI {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .result.PACI {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .result.Unknown {
+            background: #f5f5f5;
+            color: #616161;
+            border: 2px solid #616161;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>From NIHSS to OCSP subtype</h1>
+        <p class="subtitle">A simplified tool for deriving Oxfordshire Stroke Classifications from NIHSS data</p>
+
+        <form id="classificationForm">
+            <div class="double-columns">
+            <div class="question-group">
+                <label>Item 3: Visual Field Defect (Homonymous Hemianopia)</label>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="visual" name="visual">
+                    <span>Present</span>
+                </div>
+            </div>
+                <div class="question-group">
+                <label>Item 4: Facial Palsy</label>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="facial" name="facial">
+                    <span>Present</span>
+                </div>
+                <div class="side-buttons">
+                    <button type="button" class="side-btn" data-side="facial" data-value="L">Left</button>
+                    <button type="button" class="side-btn" data-side="facial" data-value="R">Right</button>
+                </div>
+            </div>
+
+            <div class="question-group">
+                <label>Item 5: Motor Arm</label>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="arm" name="arm">
+                    <span>Present</span>
+                </div>
+                <div class="side-buttons">
+                    <button type="button" class="side-btn" data-side="arm" data-value="L">Left</button>
+                    <button type="button" class="side-btn" data-side="arm" data-value="R">Right</button>
+                </div>
+            </div>
+
+            <div class="question-group">
+                <label>Item 6: Motor Leg</label>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="leg" name="leg">
+                    <span>Present</span>
+                </div>
+                <div class="side-buttons">
+                    <button type="button" class="side-btn" data-side="leg" data-value="L">Left</button>
+                    <button type="button" class="side-btn" data-side="leg" data-value="R">Right</button>
+                </div>
+            </div>
+            <div class="question-group">
+                <label>Item 7: Ataxia</label>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="ataxia" name="ataxia">
+                    <span>Present</span>
+                </div>
+                <div class="side-buttons">
+                    <button type="button" class="side-btn" data-side="ataxia" data-value="L">Left</button>
+                    <button type="button" class="side-btn" data-side="ataxia" data-value="R">Right</button>
+                </div>
+            </div>
+            
+            <div class="question-group">
+                <label>Item 8: Sensory Loss</label>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="sensory" name="sensory">
+                    <span>Present</span>
+                </div>
+                <div class="side-buttons sensory-buttons">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span style="font-weight: 500; min-width: 60px;">Left:</span>
+                        <button type="button" class="side-btn" data-side="sensory-left" data-value="face">Face</button>
+                        <button type="button" class="side-btn" data-side="sensory-left" data-value="arm">Arm</button>
+                        <button type="button" class="side-btn" data-side="sensory-left" data-value="leg">Leg</button>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span style="font-weight: 500; min-width: 60px;">Right:</span>
+                        <button type="button" class="side-btn" data-side="sensory-right" data-value="face">Face</button>
+                        <button type="button" class="side-btn" data-side="sensory-right" data-value="arm">Arm</button>
+                        <button type="button" class="side-btn" data-side="sensory-right" data-value="leg">Leg</button>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="question-group">
+                <label>Item 9: Aphasia</label>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="aphasia" name="aphasia">
+                    <span>Present</span>
+                </div>
+            </div>
+
+        <div class="question-group">
+            <label>Item 10: Dysarthria</label>
+            <div class="checkbox-container">
+                <input type="checkbox" id="dysarthria" name="dysarthria">
+                <span>Present</span>
+            </div>
+        </div>
+
+            <div class="question-group">
+                <label>Item 11: Neglect</label>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="neglect" name="neglect">
+                    <span>Present</span>
+                </div>
+            </div>
+
+            </div>
+
+            <div style="margin-top: 5px;">
+                <button type="submit">Classify</button>
+                <button type="button" onclick="resetForm()">Reset</button>
+            </div>
+        </form>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        // Store side selections - can be '', 'L', 'R', or 'LR' (both)
+        const sideSelections = {
+            facial: '',
+            arm: '',
+            leg: '',
+            ataxia: ''
+        };
+
+        // Store sensory selections separately for each side
+        const sensorySelections = {
+            left: '',   // 'face', 'arm', 'leg', or combinations like 'armface'
+            right: ''   // 'face', 'arm', 'leg', or combinations like 'armface'
+        };
+
+        // Handle checkbox changes to show/hide side buttons
+        ['facial', 'arm', 'leg', 'ataxia', 'sensory'].forEach(id => {
+            const checkbox = document.getElementById(id);
+            const sideButtons = checkbox.closest('.question-group').querySelector('.side-buttons');
+
+            if (sideButtons) {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        sideButtons.classList.add('visible');
+                    } else {
+                        sideButtons.classList.remove('visible');
+                        // Reset side selections when unchecked
+                        sideButtons.querySelectorAll('.side-btn').forEach(btn => {
+                            btn.classList.remove('active');
+                        });
+                        if (id === 'sensory') {
+                            sensorySelections.left = '';
+                            sensorySelections.right = '';
+                        } else {
+                            sideSelections[id] = '';
+                        }
+                    }
+                });
+            }
+        });
+
+        // Handle side button clicks
+        document.querySelectorAll('.side-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const side = this.dataset.side;
+                const value = this.dataset.value;
+
+                // Toggle the button
+                this.classList.toggle('active');
+
+                // Handle sensory-specific buttons
+                if (side === 'sensory-left') {
+                    const activeButtons = document.querySelectorAll(`[data-side="sensory-left"].active`);
+                    sensorySelections.left = Array.from(activeButtons).map(b => b.dataset.value).sort().join('');
+                } else if (side === 'sensory-right') {
+                    const activeButtons = document.querySelectorAll(`[data-side="sensory-right"].active`);
+                    sensorySelections.right = Array.from(activeButtons).map(b => b.dataset.value).sort().join('');
+                } else {
+                    // Update sideSelections based on which buttons are active
+                    const activeButtons = document.querySelectorAll(`[data-side="${side}"].active`);
+                    const activeSides = Array.from(activeButtons).map(b => b.dataset.value).sort().join('');
+                    sideSelections[side] = activeSides;
+                }
+            });
+        });
+
+        // Classification logic based on OCSP criteria from README
+        function classifyPatient() {
+            const facial = document.getElementById('facial').checked;
+            const arm = document.getElementById('arm').checked;
+            const leg = document.getElementById('leg').checked;
+            const sensory = document.getElementById('sensory').checked;
+            const visual = document.getElementById('visual').checked;
+            const neglect = document.getElementById('neglect').checked;
+            const aphasia = document.getElementById('aphasia').checked;
+            const ataxia = document.getElementById('ataxia').checked;
+            const dysarthria = document.getElementById('dysarthria').checked;
+
+            // Count items 4, 5, 6 on each side
+            let leftSide = 0;
+            let rightSide = 0;
+
+            if (sideSelections.facial.includes('L') && facial) leftSide++;
+            if (sideSelections.facial.includes('R') && facial) rightSide++;
+
+            if (sideSelections.arm.includes('L') && arm) leftSide++;
+            if (sideSelections.arm.includes('R') && arm) rightSide++;
+
+            if (sideSelections.leg.includes('L') && leg) leftSide++;
+            if (sideSelections.leg.includes('R') && leg) rightSide++;
+
+            // Check if sensory loss meets the criteria
+            // Count locations selected for each side
+            const leftLocations = sensorySelections.left.match(/face|arm|leg/g) || [];
+            const rightLocations = sensorySelections.right.match(/face|arm|leg/g) || [];
+
+            const leftSensoryCount = leftLocations.length;
+            const rightSensoryCount = rightLocations.length;
+            const totalSensoryLocations = leftSensoryCount + rightSensoryCount;
+
+            // For category A: Ipsilateral sensory loss on at least 2 of: face, arm, leg
+            const sensoryValidForA = sensory && (leftSensoryCount >= 2 || rightSensoryCount >= 2);
+
+            // For PACI "exactly one": Sensory loss restricted to only 1 area (any side)
+            const sensoryValidForPACI = sensory && totalSensoryLocations === 1;
+
+            // Count exactly one of items 4, 5, 6, 8 (using PACI-specific criteria for item 8)
+            const exactlyOneItem = [facial, arm, leg, sensoryValidForPACI].filter(Boolean).length === 1;
+
+            // STEP 1: Major categories
+            // A: At least 2 of items 4, 5, 6 on the same side (L or R) AND/OR Item 8 (with full criteria)
+            const A = (leftSide >= 2 || rightSide >= 2) || sensoryValidForA;
+
+            // B: Item 3 (visual field defect)
+            const B = visual;
+
+            // C: Item 11 AND/OR Item 9 (neglect and/or aphasia)
+            const C = neglect || aphasia;
+
+            // D: Item 7 AND/OR Item 10 (ataxia and/or dysarthria)
+            // Important: dysarthria is ignored if item 4 or item 9 is present
+            let D;
+            if (dysarthria && (facial || aphasia)) {
+                D = ataxia; // Ignore dysarthria, only count ataxia
+            } else {
+                D = ataxia || dysarthria;
+            }
+
+            // Check if ataxia is on same side as A
+            const ataxiaSameSideAsA = (
+                (leftSide >= 2 && sideSelections.ataxia.includes('L') && ataxia) ||
+                (rightSide >= 2 && sideSelections.ataxia.includes('R') && ataxia)
+            );
+
+            // Special case: item 10 + item 5 exclusively
+            const dysarthriaArmOnly = dysarthria && arm && !facial && !leg && !sensory && !visual && !neglect && !aphasia && !ataxia;
+
+            // STEP 2: Classification
+            // TACI: A + B + C (not D)
+            if (A && B && C && !D) {
+                return 'TACI';
+            }
+
+            // PACI: two of A, B or C (not D) OR C alone OR exactly one of items 4, 5, 6, 8
+            const countABC = [A, B, C].filter(Boolean).length;
+            if ((countABC === 2 && !D) || (C && !A && !B) || exactlyOneItem) {
+                return 'PACI';
+            }
+
+            // LACI: A (not B, C, D) OR A + item 7 (on same side as A) (not B, C or item 10) OR item 10 + item 5 (exclusively)
+            if ((A && !B && !C && !D) ||
+                (A && ataxiaSameSideAsA && !B && !C && !dysarthria) ||
+                dysarthriaArmOnly) {
+                return 'LACI';
+            }
+
+            // POCI: D OR B (not A or C)
+            if (D || (B && !A && !C)) {
+                return 'POCI';
+            }
+
+            return 'Unknown';
+        }
+
+        // Form submission
+        document.getElementById('classificationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const classification = classifyPatient();
+            const resultDiv = document.getElementById('result');
+
+            resultDiv.className = 'result show ' + classification;
+            resultDiv.textContent = 'Classification: ' + classification;
+        });
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('classificationForm').reset();
+            document.querySelectorAll('.side-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.side-buttons').forEach(btn => {
+                btn.classList.remove('visible');
+            });
+            sideSelections.facial = '';
+            sideSelections.arm = '';
+            sideSelections.leg = '';
+            sideSelections.ataxia = '';
+            sensorySelections.left = '';
+            sensorySelections.right = '';
+            document.getElementById('result').className = 'result';
+        }
+    </script>
+</body>
+</html>
