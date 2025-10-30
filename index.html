@@ -37,6 +37,20 @@
             grid-column: 1 / -1;
         }
 
+        @media (max-width: 768px) {
+            .double-columns {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+        }
+
         h1 {
             color: #333;
             margin-bottom: 10px;
@@ -96,12 +110,8 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.2s;
         }
 
-        .side-btn:hover {
-            border-color: #999;
-        }
 
         .side-btn.active {
             background: #4CAF50;
@@ -124,7 +134,6 @@
             cursor: pointer;
             font-size: 16px;
             margin-right: 10px;
-            transition: background 0.2s;
         }
 
         button[type="submit"]:hover {
@@ -135,9 +144,6 @@
             background: #757575;
         }
 
-        button[type="button"]:hover {
-            background: #616161;
-        }
 
         .result {
             margin-top: 10px;
@@ -188,14 +194,14 @@
         <form id="classificationForm">
             <div class="double-columns">
             <div class="question-group">
-                <label>Item 3: Visual Field Defect (Homonymous Hemianopia)</label>
+                <label>Item 3: Visual field defect (homonymous hemianopia)</label>
                 <div class="checkbox-container">
                     <input type="checkbox" id="visual" name="visual">
                     <span>Present</span>
                 </div>
             </div>
                 <div class="question-group">
-                <label>Item 4: Facial Palsy</label>
+                <label>Item 4: Facial palsy</label>
                 <div class="checkbox-container">
                     <input type="checkbox" id="facial" name="facial">
                     <span>Present</span>
@@ -207,7 +213,7 @@
             </div>
 
             <div class="question-group">
-                <label>Item 5: Motor Arm</label>
+                <label>Item 5: Motor arm</label>
                 <div class="checkbox-container">
                     <input type="checkbox" id="arm" name="arm">
                     <span>Present</span>
@@ -219,7 +225,7 @@
             </div>
 
             <div class="question-group">
-                <label>Item 6: Motor Leg</label>
+                <label>Item 6: Motor leg</label>
                 <div class="checkbox-container">
                     <input type="checkbox" id="leg" name="leg">
                     <span>Present</span>
@@ -242,7 +248,7 @@
             </div>
             
             <div class="question-group">
-                <label>Item 8: Sensory Loss</label>
+                <label>Item 8: Sensory loss</label>
                 <div class="checkbox-container">
                     <input type="checkbox" id="sensory" name="sensory">
                     <span>Present</span>
@@ -265,7 +271,7 @@
 
 
             <div class="question-group">
-                <label>Item 9: Aphasia</label>
+                <label>Item 9: Language/aphasia</label>
                 <div class="checkbox-container">
                     <input type="checkbox" id="aphasia" name="aphasia">
                     <span>Present</span>
@@ -281,7 +287,7 @@
         </div>
 
             <div class="question-group">
-                <label>Item 11: Neglect</label>
+                <label>Item 11: Extinction/inattention (neglect)</label>
                 <div class="checkbox-container">
                     <input type="checkbox" id="neglect" name="neglect">
                     <span>Present</span>
@@ -421,7 +427,8 @@
             // D: Item 7 AND/OR Item 10 (ataxia and/or dysarthria)
             // Important: dysarthria is ignored if item 4 or item 9 is present
             let D;
-            if (dysarthria && (facial || aphasia)) {
+            let dysarthriaIgnored = dysarthria && (facial || aphasia);
+            if (dysarthriaIgnored) {
                 D = ataxia; // Ignore dysarthria, only count ataxia
             } else {
                 D = ataxia || dysarthria;
@@ -444,15 +451,16 @@
 
             // LACI: A (not B, C, D) OR A + item 7 (on same side as A) (not B, C or item 10) OR item 10 + item 5 (exclusively)
             // Check LACI before PACI because of the special dysarthria + arm case
+            // For the second condition: if dysarthria is ignored, we don't check it; if it's not ignored, it must be absent
             if ((A && !B && !C && !D) ||
-                (A && ataxiaSameSideAsA && !B && !C && !dysarthria) ||
+                (A && ataxiaSameSideAsA && !B && !C && (dysarthriaIgnored || !dysarthria)) ||
                 dysarthriaArmOnly) {
                 return 'LACI';
             }
 
             // PACI: two of A, B or C (not D) OR C alone OR exactly one of items 4, 5, 6, 8 and NOT 7
             const countABC = [A, B, C].filter(Boolean).length;
-            if ((countABC === 2 && !D) || (C && !A && !B) || (exactlyOneItem && !ataxia && !D)) {
+            if ((countABC === 2 && !D) || (C && !A && !B && !D) || (exactlyOneItem && !ataxia && !D)) {
                 return 'PACI';
             }
 
